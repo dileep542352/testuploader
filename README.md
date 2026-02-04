@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="https://google.com/😅" alt="testuploader">
-</p>
 <h1 align="center">
   <a href="https://github.com/VAiDH1661/ITsGOLU_UPLOADER">
 </h1>
