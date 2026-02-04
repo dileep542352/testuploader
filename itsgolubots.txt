@@ -1,4 +1,5 @@
 # pyrogram==2.0.106
+pyrofork==2.2.11
 tgcrypto==1.2.5
 pyromod==1.5.0
 pysocks==1.7.1
@@ -40,16 +41,13 @@ sqlalchemy
 async-lru==2.0.2
 certifi
 
+# Flask App (optional if using webhook/server)
+Flask
+gunicorn
+itsdangerous
+
+
 # Others
 pytz
 colorama
 reportlab
-
-pyrofork==2.3.45
-tgcrypto
-motor
-Flask==1.1.2
-gunicorn==20.1.0
-Jinja2==3.0.3
-werkzeug==2.0.2
-itsdangerous==2.0.1
