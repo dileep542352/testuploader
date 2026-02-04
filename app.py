@@ -61,15 +61,10 @@ def home():
 
 <body>
     <div class="container">
-        <a href="https://github.com/DevThanos" class="text-decoration-none text-light">
+        <a href="https://github.com/dileep542352/testuploader" class="text-decoration-none text-light">
             <pre class="ascii-art">
             
-████████╗██╗  ██╗ █████╗ ███╗   ██╗ ██████╗ ███████╗
-╚══██╔══╝██║  ██║██╔══██╗████╗  ██║██╔═══██╗██╔════╝
-   ██║   ███████║███████║██╔██╗ ██║██║   ██║███████╗
-   ██║   ██╔══██║██╔══██║██║╚██╗██║██║   ██║╚════██║
-   ██║   ██║  ██║██║  ██║██║ ╚████║╚██████╔╝███████║
-   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝
+★⌒(●ゝω・)ｂ⧼S̼⧽⧼o̼⧽⧼n̼⧽⧼u̼⧽
             </pre>
         </a>
 
