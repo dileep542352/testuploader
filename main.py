@@ -915,118 +915,70 @@ async def txt_handler(bot: Client, m: Message):
                         await m.reply_text(str(e))
                         time.sleep(e.x)
                         continue    
-  
-                                elif ".pdf" in url:
-                    # ────────────────────────────────────────────────
-                    #     Utkarsh / S3 / CloudFront domain fix
-                    # ────────────────────────────────────────────────
+                        
+              # This is tha code for pdf downloader
+                                                elif ".pdf" in url:
+                    pdf_path = f"downloads/{name}.pdf"
+                    prog = await bot.send_message(m.chat.id, f"📥 **Downloading PDF:** `{name1}`")
+                    
+                    # Fix for Utkarsh / S3 CloudFront domains
                     if "utkarshapp.com" in url:
                         url = url.replace("https://apps-s3-prod.utkarshapp.com", "https://d1q5ugnejk3zoi.cloudfront.net")
-                    elif "utkarsh" in url and any(s in url for s in ["s3", "amazonaws"]):
-                        url = re.sub(r"https?://[^/]+utkarshapp\.com", "https://d1q5ugnejk3zoi.cloudfront.net", url)
-
-                    prog = None
-                    pdf_path = f"downloads/{name}.pdf"
+                    elif "utkarsh" in url and "s3" in url:
+                        url = re.sub(r"https://.*?utkarshapp\.com", "https://d1q5ugnejk3zoi.cloudfront.net", url)
 
                     try:
-                        prog = await bot.send_message(
-                            chat_id=channel_id,
-                            text=f"<b>📥 Downloading PDF</b>\n┃ {str(count).zfill(3)}) {name1}"
-                        )
-
                         os.makedirs("downloads", exist_ok=True)
-
+                        
+                        # Headers to mimic a real browser (prevents 403 Forbidden)
                         headers = {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-                            'Accept': 'application/pdf, text/html, */*;q=0.9',
-                            'Referer': 'https://utkarsh.com/',
-                            'Accept-Encoding': 'identity',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept': 'application/pdf,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
                         }
 
-                        # Preference order: cloudscraper → requests → yt-dlp fallback
-                        response = None
-
-                        # 1. Cloudscraper (Cloudflare bypass)
-                        try:
-                            scraper = cloudscraper.create_scraper(
-                                delay=8,
-                                browser={
-                                    'browser': 'chrome',
-                                    'platform': 'windows',
-                                    'mobile': False,
-                                    'desktop': True
-                                }
-                            )
-                            response = scraper.get(url, headers=headers, timeout=60, stream=True)
-                        except Exception:
-                            pass
-
-                        # 2. Normal requests fallback
-                        if not response:
-                            try:
-                                response = requests.get(url, headers=headers, timeout=60, stream=True, allow_redirects=True)
-                            except Exception:
-                                pass
-
-                        success = False
-
-                        if response and response.status_code == 200:
+                        # Using requests with verify=False to bypass SSL errors if necessary
+                        response = requests.get(url, stream=True, timeout=60, headers=headers, verify=False)
+                        
+                        if response.status_code == 200:
                             with open(pdf_path, 'wb') as f:
-                                for chunk in response.iter_content(chunk_size=16384):
+                                for chunk in response.iter_content(chunk_size=1024*1024): # 1MB chunks
                                     if chunk:
                                         f.write(chunk)
-                            success = True
-
-                        # 3. Last resort: yt-dlp (sabse slow lekin kaam karta hai kai cases mein)
-                        if not success:
-                            cmd = f'yt-dlp -q --no-warnings -o "{pdf_path}" "{url}"'
-                            ret = os.system(cmd)
-                            if ret == 0 and os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 1000:
-                                success = True
-                            else:
-                                raise Exception("All download methods failed")
-
-                        if success:
+                            
+                            # Upload to Target Channel
                             await bot.send_document(
-                                chat_id=channel_id,
-                                document=pdf_path,
+                                chat_id=channel_id, 
+                                document=pdf_path, 
                                 caption=cc1,
-                                thumb=photologo if thumb != "no" else None,
-                                disable_notification=True
+                                thumb=photologo # Adding thumb to make it look professional
                             )
                             count += 1
+                            if os.path.exists(pdf_path): os.remove(pdf_path)
                             await prog.delete()
                         else:
-                            raise Exception("Download returned empty / invalid file")
+                            # If direct download fails, attempt a simple wget command as fallback
+                            fallback_cmd = f'wget --user-agent="Mozilla" -O "{pdf_path}" "{url}"'
+                            os.system(fallback_cmd)
+                            
+                            if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
+                                await bot.send_document(chat_id=channel_id, document=pdf_path, caption=cc1)
+                                count += 1
+                                os.remove(pdf_path)
+                                await prog.delete()
+                            else:
+                                raise Exception(f"Server returned {response.status_code}")
 
-                    except Exception as ex:
-                        error_msg = str(ex).strip()[:300]
+                    except Exception as e:
+                        logging.error(f"PDF Error: {str(e)}")
                         await bot.send_message(
-                            chat_id=channel_id,
-                            text=(
-                                f"❌ <b>PDF Failed</b>\n"
-                                f"┃ {str(count).zfill(3)}) {name1}\n"
-                                f"┃ Error: <code>{error_msg}</code>"
-                            ),
+                            channel_id, 
+                            f"❌ **PDF Failed:** `{name1}`\n<blockquote>Reason: {str(e)}</blockquote>", 
                             disable_web_page_preview=True
                         )
                         failed_count += 1
-
-                    finally:
-                        # Cleanup hamesha
-                        if prog:
-                            try:
-                                await prog.delete()
-                            except:
-                                pass
-                        if os.path.exists(pdf_path):
-                            try:
-                                os.remove(pdf_path)
-                            except:
-                                pass
-
-                    continue  # next link
-
+                        try: await prog.delete()
+                        except: pass
+                    continue
 
                 elif ".ws" in url and  url.endswith(".ws"):
                     try:
